@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>🧮 Konverter Satuan Lengkap</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --bg:#f5f7fa;
+  --card:#ffffff;
+  --text:#222;
+  --accent:#3f6fff;
+  --radius:14px;
+  --transition:.25s;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#121212;--card:#1e1e1e;--text:#e4e4e4;}
+}
+*{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);padding:20px 10px;transition:background var(--transition),color var(--transition)}
+h1{text-align:center;margin:0 0 25px;font-size:2rem}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.08);transition:transform var(--transition),box-shadow var(--transition)}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.12)}
+h2{margin:0 0 15px;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+label{font-size:.9rem;font-weight:600;margin-top:10px;display:block}
+input,select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #999;font-size:1rem;margin-top:4px;background:transparent;color:var(--text)}
+.result{margin-top:14px;font-weight:700;font-size:1.1rem;color:var(--accent)}
+</style>
+</head>
+<body>
+<h1>🧮 Konverter Satuan Lengkap</h1>
+<div class="grid" id="kotak"></div>
+
+<script>
+// DATA SATUAN (base = nilai ke satuan dasar)
+const data={
+  panjang:{base:'m',satuan:{km:1000,hm:100,dam:10,m:1,dm:0.1,cm:0.01,mm:0.001,mil:1609.34,yard:0.9144,ft:0.3048,inchi:0.0254}},
+  luas:{base:'m²',satuan:{'km²':1000000,'hm²':10000,'dam²':100,'m²':1,'dm²':0.01,'cm²':0.0001,'mm²':0.000001,hektar:10000,are:100,acre:4046.86}},
+  volume:{base:'l',satuan:{'m³':1000,'dm³':1,l:1,ml:0.001,'cm³':0.001,galon:3.78541,gelas:0.24,sdm:0.015}},
+  berat:{base:'g',satuan:{ton:1000000,kwintal:100000,kg:1000,hg:100,dag:10,g:1,dg:0.1,cg:0.01,mg:0.001,ons:100,lb:453.592,oz:28.3495}},
+  waktu:{base:'detik',satuan:{th:31536000,bln:2628000,minggu:604800,hari:86400,jam:3600,menit:60,detik:1,milidetik:0.001}},
+  suhu:{base:'celsius',satuan:{'°C':1,'°F':1,K:1,'°R':1},special:true},
+  kecepatan:{base:'m/s',satuan:{'km/jam':1/3.6,'m/s':1,mph:0.44704,knot:0.514444,Mach:340}},
+  tekanan:{base:'Pa',satuan:{Pa:1,kPa:1000,bar:100000,atm:101325,mmHg:133.322,psi:6894.76}},
+  energi:{base:'J',satuan:{J:1,kJ:1000,cal:4.184,kcal:4184,Wh:3600,kWh:3600000,BTU:1055.06}},
+  daya:{base:'W',satuan:{W:1,kW:1000,MW:1000000,HP:745.7,kVA:1000}}
+};
+
+// MEMBUAT CARD HTML
+const kotak=document.getElementById('kotak');
+Object.entries(data).forEach(([kategori,obj])=>{
+  const idPrefix=kategori;
+  const satuanList=Object.keys(obj.satuan);
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML=`
+    <h2>${ikon(kategori)} ${kapital(kategori)}</h2>
+    <label>Nilai<input type="number" id="${idPrefix}In" step="any" placeholder="Masukkan angka"></label>
+    <label>Dari<select id="${idPrefix}From">${satuanList.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></label>
+    <label>Ke<select id="${idPrefix}To">${satuanList.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></label>
+    <div class="result" id="${idPrefix}Out">Hasil: -</div>
+  `;
+  kotak.appendChild(card);
+});
+
+// FUNGSI HITUNG
+function hitung(kat){
+  const obj=data[kat];
+  const input=parseFloat(document.getElementById(kat+'In').value);
+  const from=document.getElementById(kat+'From').value;
+  const to=document.getElementById(kat+'To').value;
+  const out=document.getElementById(kat+'Out');
+  if(isNaN(input)){out.textContent='Hasil: -';return;}
+
+  let hasil;
+  if(obj.special && kat==='suhu'){
+    let c;
+    if(from==='°C') c=input;
+    else if(from==='°F') c=(input-32)*5/9;
+    else if(from==='K') c=input-273.15;
+    else if(from==='°R') c=input*5/4;
+    if(to==='°C') hasil=c;
+    else if(to==='°F') hasil=c*9/5+32;
+    else if(to==='K') hasil=c+273.15;
+    else if(to==='°R') hasil=c*4/5;
+  }else{
+    const base=input*obj.satuan[from];
+    hasil=base/obj.satuan[to];
+  }
+  out.textContent=`Hasil: ${hasil.toFixed(2)} ${to}`;
+}
+
+// HELPER
+function kapital(str){return str.replace(/\b\w/g,c=>c.toUpperCase())}
+function ikon(k){
+  const ic={panjang:'📏',luas:'📐',volume:'🧪',berat:'⚖️',waktu:'⏱️',suhu:'🌡️',kecepatan:'🏃',tekanan:'🌡️',energi:'⚡',daya:'🔋'};
+  return ic[k]||'📦';
+}
+
+// TARUH EVENT LISTENER SETELAH ELEMEN ADA
+Object.keys(data).forEach(kat=>{
+  ['In','From','To'].forEach(v=>{
+    const el=document.getElementById(kat+v);
+    if(el){
+      el.addEventListener('input',()=>hitung(kat));
+      el.addEventListener('change',()=>hitung(kat));
+    }
+  });
+});
+</script>
+</body>
+</html>
